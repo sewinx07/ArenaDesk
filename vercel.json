@@ -2,12 +2,5 @@
   "framework": "nextjs",
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm install",
-  "git": {
-    "deploymentEnabled": {
-      "backend": false,
-      "desktop-client": false,
-      "mobile-app": false
-    }
-  }
+  "installCommand": "cd frontend && npm install"
 }
