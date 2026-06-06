@@ -23,18 +23,6 @@ import auditRoutes from './routes/audit.routes';
 
 dotenv.config();
 
-async function runMigrations() {
-  logger.info('Running database migrations...');
-  try {
-    const output = execSync('npx prisma db push --accept-data-loss 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..', timeout: 30000 });
-    logger.info('Migrations complete');
-  } catch (error: any) {
-    const msg = error.stderr?.toString() || error.stdout?.toString() || error.message;
-    logger.error('Migration failed: ' + msg);
-    throw new Error('Database migration failed: ' + msg);
-  }
-}
-
 async function seedIfEmpty() {
   try {
     const userCount = await prisma.user.count();
@@ -134,7 +122,6 @@ async function startServer() {
   try {
     await connectWithRetry();
 
-    await runMigrations();
     await seedIfEmpty();
 
     httpServer.listen(config.port, () => {
