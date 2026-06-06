@@ -74,8 +74,9 @@ export const authOptions: AuthOptions = {
             cafeId: userData.user.cafeId,
             accessToken: userData.accessToken,
           };
-        } catch (error) {
-          throw new Error('Invalid email or password');
+        } catch (error: any) {
+          console.error('NextAuth authorize error:', error?.message || error);
+          throw new Error(error?.message || 'Invalid email or password');
         }
       },
     }),

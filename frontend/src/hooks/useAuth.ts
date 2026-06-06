@@ -29,7 +29,7 @@ export function useAuth() {
       if (result?.error) {
         setError(result.error === 'CredentialsSignin'
           ? 'Invalid email or password'
-          : 'An error occurred during login'
+          : `Login failed: ${result.error}`
         );
         return false;
       }
