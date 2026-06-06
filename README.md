@@ -102,12 +102,58 @@ The frontend is configured for one-click deploy on Vercel.
 | `NEXTAUTH_SECRET` | Random string for session encryption (`openssl rand -base64 32`) |
 | `NEXT_PUBLIC_API_URL` | Your deployed backend API URL |
 
-### Backend Deployment (Separate)
+## Free Backend Deployment (2 Options)
 
-The backend requires PostgreSQL and should be deployed to:
-- [Railway](https://railway.app) (recommended)
-- [Render](https://render.com)
-- [Fly.io](https://fly.io)
+### Option 1: Render (Free Node.js) + Neon (Free PostgreSQL)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USER/ArenaDeskOS)
+
+**Steps:**
+
+1. **Create a free [Neon](https://neon.tech) PostgreSQL database:**
+   - Sign up → Create project → Copy the connection string
+   - It gives 0.5 GB free, auto-suspends when idle
+
+2. **Deploy the backend on [Render](https://render.com):**
+   - Sign up (no credit card needed)
+   - Dashboard → **New +** → **Web Service**
+   - Connect your GitHub repo → select `ArenaDeskOS`
+   - Set **Root Directory** to `backend`
+   - Set **Build Command**: `npm install && npx prisma generate && npm run build`
+   - Set **Start Command**: `npm start`
+   - Add these environment variables:
+
+| Variable | Value |
+|----------|-------|
+| `NODE_ENV` | `production` |
+| `DATABASE_URL` | Your Neon connection string |
+| `JWT_SECRET` | `openssl rand -base64 32` output |
+| `JWT_EXPIRES_IN` | `7d` |
+| `JWT_REFRESH_EXPIRES_IN` | `30d` |
+| `BCRYPT_SALT_ROUNDS` | `12` |
+| `CORS_ORIGIN` | Your Vercel URL |
+
+3. **Run Prisma migrations:**
+   - In Render dashboard → your service → **Shell**
+   - Run: `npx prisma db push`
+
+4. **Seed the database:**
+   - In the same shell: `npx prisma db seed`
+
+5. **Update your Vercel env var:**
+   - Set `NEXT_PUBLIC_API_URL` to `https://your-service.onrender.com/api`
+
+### Option 2: Railway (All-in-One)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/YOUR_USER/ArenaDeskOS)
+
+1. Sign up at [Railway](https://railway.app) (no credit card)
+2. Click **New Project** → **Deploy from GitHub repo**
+3. Select your repo, set root directory to `backend`
+4. Add a **PostgreSQL** plugin
+5. Add environment variables (same as table above)
+6. After deploy, run: `npx prisma db push && npx prisma db seed`
+7. Update your Vercel `NEXT_PUBLIC_API_URL`
 
 ### Docker Production Deploy
 
