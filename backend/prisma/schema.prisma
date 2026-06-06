@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("customer")
+  createdAt    DateTime @default(now()) @map("created_at")
+  cafes        Cafe[]   @relation("OwnerCafes")
+  staffAt      Cafe[]   @relation("StaffCafes")
+  sessions     Session[]
+  reservations Reservation[]
+  participants TournamentParticipant[]
+  transactions Transaction[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Cafe {
+  id        String   @id @default(uuid())
+  ownerId   String   @map("owner_id")
+  owner     User     @relation("OwnerCafes", fields: [ownerId], references: [id])
+  name      String
+  location  String?
+  staff     User[]   @relation("StaffCafes")
+  pcs       PC[]
+  tournaments Tournament[]
+  auditLogs AuditLog[]
+
+  @@map("cafes")
+}
+
+model PC {
+  id         String   @id @default(uuid())
+  cafeId     String   @map("cafe_id")
+  cafe       Cafe     @relation(fields: [cafeId], references: [id])
+  name       String
+  status     String   @default("available")
+  hourlyRate Float    @map("hourly_rate")
+  sessions   Session[]
+  reservations Reservation[]
+
+  @@map("pcs")
+}
+
+model Session {
+  id         String    @id @default(uuid())
+  pcId       String    @map("pc_id")
+  pc         PC        @relation(fields: [pcId], references: [id])
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id])
+  startTime  DateTime  @map("start_time")
+  endTime    DateTime? @map("end_time")
+  status     String    @default("active")
+  totalPrice Float?    @map("total_price")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  transaction Transaction?
+
+  @@map("sessions")
+}
+
+model Reservation {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  pcId      String   @map("pc_id")
+  pc        PC       @relation(fields: [pcId], references: [id])
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("reservations")
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  sessionId     String   @unique @map("session_id")
+  session       Session  @relation(fields: [sessionId], references: [id])
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  amount        Float
+  paymentMethod String   @map("payment_method")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("transactions")
+}
+
+model Tournament {
+  id        String   @id @default(uuid())
+  cafeId    String   @map("cafe_id")
+  cafe      Cafe     @relation(fields: [cafeId], references: [id])
+  name      String
+  game      String
+  status    String   @default("registration")
+  participants TournamentParticipant[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tournaments")
+}
+
+model TournamentParticipant {
+  id           String   @id @default(uuid())
+  tournamentId String   @map("tournament_id")
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  teamName     String?  @map("team_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tournament_participants")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  cafeId    String?  @map("cafe_id")
+  cafe      Cafe?    @relation(fields: [cafeId], references: [id])
+  action    String
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}

@@ -1,0 +1,58 @@
+{
+  "name": "ArenaDesk-os-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ArenaDesk OS Desktop Client - PC Management for Gaming Cafés",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
+    "dev:main": "tsc -p tsconfig.main.json && electron .",
+    "dev:renderer": "tsc -p tsconfig.renderer.json",
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "tsc -p tsconfig.renderer.json",
+    "package:win": "electron-builder --win",
+    "package:mac": "electron-builder --mac",
+    "package:linux": "electron-builder --linux",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "socket.io-client": "^4.7.4",
+    "axios": "^1.6.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.312.0",
+    "recharts": "^2.10.4",
+    "date-fns": "^3.3.1",
+    "clsx": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "build": {
+    "appId": "com.ArenaDeskOS.desktop",
+    "productName": "ArenaDesk OS Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "public/icon.icns"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "public/icon.png"
+    }
+  }
+}

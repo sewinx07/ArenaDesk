@@ -1,0 +1,31 @@
+name: arenadesk_os_mobile
+description: ArenaDesk OS Mobile - Manage your gaming café on the go
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  provider: ^6.1.1
+  http: ^1.1.2
+  web_socket_channel: ^2.4.0
+  shared_preferences: ^2.2.2
+  intl: ^0.19.0
+  flutter_local_notifications: ^17.0.0
+  google_fonts: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: GameIcons
+      fonts:
+        - asset: assets/fonts/GameIcons.ttf
