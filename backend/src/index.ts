@@ -26,7 +26,7 @@ dotenv.config();
 async function runMigrations() {
   logger.info('Running database migrations...');
   try {
-    const output = execSync('npx prisma db push --accept-data-loss 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
+    const output = execSync('npx prisma db push --accept-data-loss 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..', timeout: 30000 });
     logger.info('Migrations complete');
   } catch (error: any) {
     const msg = error.stderr?.toString() || error.stdout?.toString() || error.message;
@@ -40,7 +40,7 @@ async function seedIfEmpty() {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       logger.info('Database empty — seeding...');
-      execSync('npx prisma db seed 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
+      execSync('npx prisma db seed 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..', timeout: 30000 });
       logger.info('Seed complete');
     } else {
       logger.info(`Database has ${userCount} users — skip seed`);
