@@ -4,12 +4,14 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import config from './config';
 import logger from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
+import prisma from './services/prisma';
 
 import authRoutes from './routes/auth.routes';
 import pcRoutes from './routes/pcs.routes';
@@ -20,6 +22,31 @@ import cafeRoutes from './routes/cafes.routes';
 import auditRoutes from './routes/audit.routes';
 
 dotenv.config();
+
+async function runMigrations() {
+  try {
+    logger.info('Running database migrations...');
+    execSync('npx prisma db push --accept-data-loss 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
+    logger.info('Database migrations complete');
+  } catch (error: any) {
+    logger.warn('Migration warning (non-fatal): ' + error.message);
+  }
+}
+
+async function seedIfEmpty() {
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      logger.info('Database empty — running seed...');
+      execSync('npx prisma db seed 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
+      logger.info('Seed complete');
+    } else {
+      logger.info(`Database has ${userCount} users — skipping seed`);
+    }
+  } catch (error: any) {
+    logger.warn('Seed warning (non-fatal): ' + error.message);
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -85,10 +112,11 @@ io.on('connection', (socket) => {
 
 async function startServer() {
   try {
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     await prisma.$connect();
     logger.info('Database connected successfully');
+
+    await runMigrations();
+    await seedIfEmpty();
 
     httpServer.listen(config.port, () => {
       logger.info(`${config.appName} server running on port ${config.port} in ${config.nodeEnv} mode`);
@@ -106,8 +134,6 @@ const gracefulShutdown = async (signal: string) => {
   io.close(() => logger.info('Socket.IO server closed'));
   httpServer.close(async () => {
     try {
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
       await prisma.$disconnect();
       logger.info('Database disconnected');
     } catch (error) {
