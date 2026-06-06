@@ -24,12 +24,14 @@ import auditRoutes from './routes/audit.routes';
 dotenv.config();
 
 async function runMigrations() {
+  logger.info('Running database migrations...');
   try {
-    logger.info('Running database migrations...');
-    execSync('npx prisma db push --accept-data-loss 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
-    logger.info('Database migrations complete');
+    const output = execSync('npx prisma db push --accept-data-loss 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
+    logger.info('Migrations complete');
   } catch (error: any) {
-    logger.warn('Migration warning (non-fatal): ' + error.message);
+    const msg = error.stderr?.toString() || error.stdout?.toString() || error.message;
+    logger.error('Migration failed: ' + msg);
+    throw new Error('Database migration failed: ' + msg);
   }
 }
 
@@ -37,14 +39,16 @@ async function seedIfEmpty() {
   try {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
-      logger.info('Database empty — running seed...');
+      logger.info('Database empty — seeding...');
       execSync('npx prisma db seed 2>&1', { stdio: 'pipe', cwd: __dirname + '/../..' });
       logger.info('Seed complete');
     } else {
-      logger.info(`Database has ${userCount} users — skipping seed`);
+      logger.info(`Database has ${userCount} users — skip seed`);
     }
   } catch (error: any) {
-    logger.warn('Seed warning (non-fatal): ' + error.message);
+    const msg = error.stderr?.toString() || error.stdout?.toString() || error.message;
+    logger.error('Seed failed: ' + msg);
+    throw new Error('Database seed failed: ' + msg);
   }
 }
 
@@ -110,10 +114,25 @@ io.on('connection', (socket) => {
   });
 });
 
+async function connectWithRetry(retries = 5, delay = 3000): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await prisma.$connect();
+      logger.info('Database connected successfully');
+      return;
+    } catch (error: any) {
+      const isLast = i === retries - 1;
+      logger.error(`DB connection attempt ${i + 1}/${retries} failed: ${error?.message || error}`);
+      if (isLast) throw error;
+      logger.info(`Retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function startServer() {
   try {
-    await prisma.$connect();
-    logger.info('Database connected successfully');
+    await connectWithRetry();
 
     await runMigrations();
     await seedIfEmpty();
