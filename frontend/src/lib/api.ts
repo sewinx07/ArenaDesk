@@ -64,21 +64,19 @@ async function request<T>(endpoint: string, options: FetchOptions = {}, retryCou
       headers,
     });
 
-    if (response.status === 401 && retryCount < MAX_RETRIES) {
-      if (typeof window !== 'undefined') {
-        const { signOut } = await import('next-auth/react');
-        await signOut({ redirect: false });
-      }
-      throw new ApiError('Unauthorized', 401);
-    }
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new ApiError(
-        errorData?.message || `Request failed with status ${response.status}`,
-        response.status,
-        errorData
-      );
+      const msg = errorData?.message || errorData?.error || `Request failed with status ${response.status}`;
+
+      if (response.status === 401) {
+        if (typeof window !== 'undefined' && !endpoint.includes('/auth/')) {
+          const { signOut } = await import('next-auth/react');
+          await signOut({ redirect: false });
+        }
+        throw new ApiError(msg, response.status, errorData);
+      }
+
+      throw new ApiError(msg, response.status, errorData);
     }
 
     if (response.status === 204) {

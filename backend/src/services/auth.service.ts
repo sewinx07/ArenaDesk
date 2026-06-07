@@ -38,7 +38,16 @@ export class AuthService {
       throw new AppError('Invalid email or password', HTTP_CODES.UNAUTHORIZED);
     }
 
-    return this.generateTokens(user);
+    let cafeId: string | null = null;
+    if (user.role === 'owner') {
+      const cafe = await prisma.cafe.findFirst({ where: { ownerId: user.id }, select: { id: true } });
+      cafeId = cafe?.id || null;
+    } else if (user.role === 'staff') {
+      const cafe = await prisma.cafe.findFirst({ where: { staff: { some: { id: user.id } } }, select: { id: true } });
+      cafeId = cafe?.id || null;
+    }
+
+    return this.generateTokens(user, cafeId);
   }
 
   async getMe(userId: string) {
@@ -50,7 +59,7 @@ export class AuthService {
     return user;
   }
 
-  private generateTokens(user: any) {
+  private generateTokens(user: any, cafeId?: string | null) {
     const payload: JWTPayload = { userId: user.id, email: user.email, role: user.role };
 
     const accessToken = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn } as jwt.SignOptions);
@@ -59,7 +68,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, cafeId: cafeId || null },
     };
   }
 }
